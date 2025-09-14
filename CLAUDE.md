@@ -98,8 +98,45 @@ Every agent README.md MUST contain:
 
 ## Common Commands
 
-Commands will be added here as the codebase develops:
-- Build commands
-- Test commands  
-- Lint/typecheck commands
-- Development server commands
+### Agent Management
+```bash
+# Start CrewAI Prometheus Agent
+cd agent/crewai-prometheus
+./run-prometheus-watch.sh daemon
+
+# Start CrewAI Grafana Agent (uses ports 8086, 9096 by default)
+cd agent/crewai-grafana
+./run-grafana-agent-watch.sh daemon
+
+# Health checks
+curl http://localhost:8080/health  # Prometheus Agent
+curl http://localhost:8086/health  # Grafana Agent
+```
+
+### Agent-to-Agent Integration
+```bash
+# Register Grafana agent with Prometheus
+curl -X POST http://localhost:8080/job \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "add_target",
+    "target_data": {
+      "target_id": "crewai-grafana-agent",
+      "target": "localhost:9096",
+      "job_name": "grafana-agent-metrics"
+    }
+  }'
+
+# Check active targets
+curl http://localhost:8080/status
+```
+
+### Port Configuration
+Default port assignments to avoid conflicts:
+- **crewai-prometheus**: API (8080), Metrics (9090), UI (9091)
+- **crewai-grafana**: API (8086), Metrics (9096), UI (3000)
+
+Override with environment variables:
+```bash
+API_PORT=8087 METRICS_PORT=9097 ./run-grafana-agent-watch.sh daemon
+```
